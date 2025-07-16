@@ -1,11 +1,14 @@
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Any
+from data_splitter import get_splitter
+from utils.metrics import MetricRegistry
+from utils.config_loader import RuntimeConfig
 
 class BaseTask(ABC):
     """所有任务类型的抽象基类"""
-    def __init__(self, config: 'Config'):
+    def __init__(self, config: RuntimeConfig):
         """
         Args:
             config: 全局配置对象
@@ -52,15 +55,11 @@ class BaseTask(ABC):
         full_dataset = self._load_raw_dataset()  # 需实现具体加载逻辑
 
         # 获取划分策略
-        splitter = get_splitter(self.config.data["split_method"])
+        splitter = get_splitter(self.config["data"]["split_method"])
         train_set, val_set = splitter.split(
             full_dataset,
             **self.config.data.get("split_params", {})
         )
-    
-        # 可选: 数据增强
-        if self.config.data.get("augment_train", False):
-            train_set = AugmentedDataset(train_set)  # 自定义增强包装器
             
         return train_set, val_set
     
