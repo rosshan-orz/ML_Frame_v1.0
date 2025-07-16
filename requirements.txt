@@ -1,0 +1,4 @@
+torch~=2.7.1+cu118
+tqdm~=4.67.1
+numpy~=2.2.5
+PyYAML~=6.0.2
