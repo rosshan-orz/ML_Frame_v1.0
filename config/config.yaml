@@ -8,7 +8,7 @@ data:
   file: "S{subject}_Dataset_1s.npz"
   total_sub: 18
   num_channels: 64
-  dataset_class: "EEGDataset_DTU"
+  dataset_class: "EEGDatasetDTU"
   split_method: "random"  # 划分策略类型
   split_params:                 # 策略相关参数
     train_ratio: 0.8           # 通用参数
