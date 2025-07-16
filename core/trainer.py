@@ -22,7 +22,7 @@ class Trainer:
             callbacks: 回调函数列表
         """
         self.task = task
-        self.config = config['training']
+        self.config = config
         self.logger = logger
         self.callbacks = callbacks or []
         
@@ -45,9 +45,10 @@ class Trainer:
             'sgd': torch.optim.SGD,
             'adamw': torch.optim.AdamW
         }
-        return optim_map[self.config['optimizer']](
+        return optim_map[self.config['training']['optimizer']](
             self.model.parameters(),
-            lr=self.config['lr'],
+            lr=self.config['training']['lr'],
+            # TODO
             **self.config.get('optimizer_params', {})
         )
 
@@ -60,6 +61,7 @@ class Trainer:
             'step': torch.optim.lr_scheduler.StepLR,
             'plateau': torch.optim.lr_scheduler.ReduceLROnPlateau
         }
+        # TODO
         return schedulers[self.config['scheduler']](
             self.optimizer,
             **self.config['scheduler_params']
@@ -67,12 +69,12 @@ class Trainer:
 
     def run(self):
         """主训练循环"""
-        for epoch in range(self.config['epochs']):
+        for epoch in range(self.config['training']['epochs']):
             self.epoch = epoch
             self._run_epoch()
             
             # 验证阶段
-            self.epoch_logits, self.epoch_labels, val_metrics = self._validate
+            self.epoch_logits, self.epoch_labels, val_metrics = self._validate()
             self._checkpoint(val_metrics)
                 
             # 回调处理
@@ -104,7 +106,6 @@ class Trainer:
         if self.scheduler:
             self.scheduler.step()
 
-    @property
     def _validate(self) -> Tuple[List[torch.Tensor], List[torch.Tensor],Dict[str, float]]:
         """验证流程"""
         self.model.eval()
@@ -137,9 +138,9 @@ class Trainer:
         
         return all_logits, all_labels, avg_metrics
 
-    def _checkpoint(self, metrics: Dict[str, float]):
+    def _checkpoint(self, metrics: Dict[str, Any]):
         """模型保存逻辑"""
-        current_metric = metrics[self.config['monitor_metric']]
+        current_metric = metrics[self.config['logging']['monitor_metric']]
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         if current_metric > self.best_metric:
             self.best_metric = current_metric
@@ -154,5 +155,5 @@ class Trainer:
             
             torch.save(
                 checkpoint,
-                Path(self.config['save_dir']) / f"best_model{timestamp}.pt"
+                Path(self.config['environment']['save_dir']) / f"best_model{timestamp}.pt"
             )
