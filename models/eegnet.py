@@ -1,5 +1,5 @@
 import torch.nn as nn
-from model import register_model
+from models import register_model
 
 @register_model("EEGNet")  # 注册到模型工厂
 
