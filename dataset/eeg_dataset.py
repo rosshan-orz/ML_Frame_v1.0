@@ -2,7 +2,7 @@ from torch.utils.data import Dataset
 import os, torch
 import numpy as np
 
-class EEGDataset_DTU(Dataset):
+class EEGDatasetDTU(Dataset):
     def __init__(self, root, file_name, mode='none'):
         self.file_path = os.path.join(root, file_name)
         self.data = np.load(self.file_path, allow_pickle=True)
@@ -37,7 +37,7 @@ class EEGDataset_DTU(Dataset):
         
         return eeg, event
     
-class EEGDataset_KUL(Dataset):
+class EEGDatasetKUL(Dataset):
     def __init__(self, root, file_name):
         self.file_path = os.path.join(root, file_name)
         self.data = np.load(self.file_path)
