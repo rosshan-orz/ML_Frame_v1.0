@@ -22,10 +22,12 @@ training:
   batch_size: 60
   lr: 0.001
   epochs: 100
-  weight_decay: 0.001
-  patience: 1
-  factor: 0.9
-  temperature: 0.1
+  optimizer: "Adam"
+  optimizer_params:
+    weight_decay: 0.001
+    patience: 1
+    factor: 0.9
+    temperature: 0.1
   
 # Model env & save
 environment:
@@ -37,4 +39,4 @@ logging:
   save_dir: "./logs"
   format: "json"  # 可选：json/txt/csv
   filename_template: "{model}+{dataset}+{split}+{timestamp}"
-  monitor: "val_acc"
+  monitor_metrics: "val_acc"
