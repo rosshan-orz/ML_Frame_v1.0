@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
+from typing import Tuple, Dict
 from core.base_task import BaseTask
-from models.eegnet import EEGNet
 from utils.metrics import MetricRegistry
 from utils.config_loader import RuntimeConfig, load_dataset_class
 from models import get_model  # 工厂方法导入
@@ -54,14 +54,14 @@ class BinaryClassificationTask(BaseTask):
             返回模型实例
         """
         return get_model(
-            model_name="EEGNet",
+            model_name=self.config["model"]["class_name"],
             num_channels=self.config["data"]["num_channels"]
         ).to(self.device)
 
     def train_step(self, 
                  batch: tuple[torch.Tensor, ...], 
                  model: torch.nn.Module,
-                 optimizer: torch.optim.Optimizer) -> tuple[float, dict]:
+                 optimizer: torch.optim.Optimizer) -> Tuple[float, Dict]:
         """
         单批次训练逻辑
         
@@ -97,7 +97,7 @@ class BinaryClassificationTask(BaseTask):
 
     def valid_step(self, 
                 batch: tuple[torch.Tensor, ...],
-                model: torch.nn.Module) -> tuple[torch.Tensor, torch.Tensor, dict]:
+                model: torch.nn.Module) -> Tuple[torch.Tensor, torch.Tensor, Dict]:
         """
         单批次验证逻辑
         
