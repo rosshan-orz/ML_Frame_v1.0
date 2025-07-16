@@ -25,6 +25,7 @@ class BinaryClassificationTask(BaseTask):
         
         # 可以在这里初始化其他需要的组件
 
+    @property
     def _load_raw_dataset(self) -> Dataset:
         """
         加载原始数据集
@@ -38,12 +39,12 @@ class BinaryClassificationTask(BaseTask):
         
         # 动态加载数据集类
         dataset_class = load_dataset_class(data_config["dataset_class"])
-        
-        # 创建数据集实例
-        return dataset_class(
+        dataset = dataset_class(
             root=data_config["root"],
-            file_name=data_config["file"].format(subject="1")  # 使用默认subject为1的数据
+            file_name=data_config["file"].format(self.config.subject)  # 使用默认subject为1的数据
         )
+        # 创建数据集实例
+        return dataset
 
     def create_model(self) -> torch.nn.Module:
         """
@@ -118,5 +119,6 @@ class BinaryClassificationTask(BaseTask):
                 'logits': outputs.detach(),
                 'labels': labels.long()
             })
+            logits = outputs.detach()
         
         return logits, labels, metrics
