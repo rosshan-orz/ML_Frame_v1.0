@@ -20,7 +20,7 @@ class MetricRegistry:
         cls,
         input_dict: Dict[str, Any],
         metrics: Optional[list] = None
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Any]:
         """
         批量计算Metrics
         Args:
@@ -54,7 +54,7 @@ def accuracy(input_dict: Dict) -> float:
     preds = logits.argmax(dim=1)
     return (preds == labels).float().mean().item()
 
-def cross_entropy_loss(input_dict: Dict) -> float:
+def cross_entropy_loss(input_dict: Dict) -> torch.Tensor:
     logits, labels = _get_required(input_dict, 'logits', 'labels')
     return F.cross_entropy(logits, labels)
 
