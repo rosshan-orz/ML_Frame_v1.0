@@ -2,7 +2,7 @@
 import torch
 from tqdm import tqdm
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Any, Tuple
 from datetime import datetime
 from utils.config_loader import RuntimeConfig
 
@@ -34,6 +34,8 @@ class Trainer:
         # 训练状态跟踪
         self.epoch = 0
         self.global_step = 0
+        self.epoch_logits = []
+        self.epoch_labels = []
         self.best_metric = -float('inf')
 
     def _create_optimizer(self) -> torch.optim.Optimizer:
@@ -70,9 +72,8 @@ class Trainer:
             self._run_epoch()
             
             # 验证阶段
-            if epoch % self.config['eval_freq'] == 0:
-                val_metrics = self._validate()
-                self._checkpoint(val_metrics)
+            self.epoch_logits, self.epoch_labels, val_metrics = self._validate
+            self._checkpoint(val_metrics)
                 
             # 回调处理
             for callback in self.callbacks:
@@ -96,28 +97,31 @@ class Trainer:
                 }, step=self.global_step)
             
             # 更新进度条
-            pbar.set_postfix(loss=loss)
+            pbar.set_postfix({'loss': loss, 'acc': metrics['accuracy']})
             self.global_step += 1
 
         # 更新学习率
         if self.scheduler:
             self.scheduler.step()
 
-    def _validate(self) -> Dict[str, float]:
+    @property
+    def _validate(self) -> Tuple[List[torch.Tensor], List[torch.Tensor],Dict[str, float]]:
         """验证流程"""
         self.model.eval()
-        val_loader = self.task.get_data_loaders()[1]
+        pbar = tqdm(self.task.get_data_loaders()[1], desc=f"Epoch {self.epoch}")
         all_metrics = []
         all_logits = []
         all_labels = []
         
         with torch.no_grad():
-            for batch in tqdm(val_loader, desc="Validating"):
+            for batch in pbar:
                 _logits, _labels, metrics = self.task.valid_step(batch, self.model)
                 # 确保设备一致性
                 all_logits.append(_logits)
                 all_labels.append(_labels)
                 all_metrics.append(metrics)
+
+                pbar.set_postfix({'loss': metrics['loss'].item(), 'acc': metrics['accuracy']})
         
         # 聚合指标
         avg_metrics = {
@@ -131,11 +135,12 @@ class Trainer:
                 step=self.global_step
             )
         
-        return avg_metrics
+        return all_logits, all_labels, avg_metrics
 
     def _checkpoint(self, metrics: Dict[str, float]):
         """模型保存逻辑"""
         current_metric = metrics[self.config['monitor_metric']]
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         if current_metric > self.best_metric:
             self.best_metric = current_metric
             
@@ -149,5 +154,5 @@ class Trainer:
             
             torch.save(
                 checkpoint,
-                Path(self.config['save_dir']) / f"best_model.pt"
+                Path(self.config['save_dir']) / f"best_model{timestamp}.pt"
             )
