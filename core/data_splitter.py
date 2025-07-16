@@ -13,17 +13,17 @@ class BaseSplitStrategy(ABC):
 class RandomSplitStrategy(BaseSplitStrategy):
     def split(self, dataset, **params):
         train_len = int(len(dataset) * params["train_ratio"])
-        valid_len = int(len(dataset) - train)
-        Train_dataset, Valid_dataset = random_split(dataset, [train_len, val_len])
+        valid_len = int(len(dataset) - train_len)
+        Train_dataset, Valid_dataset = random_split(dataset, [train_len, valid_len])
         
         return Train_dataset, Valid_dataset
 
 class OrderSplitStrategy(BaseSplitStrategy):
     def split(self, dataset, **params):
         train_len = int(len(dataset) * params["train_ratio"])
-        valid_len = int(len(dataset) - train)
-        Train_dataset = Subset(TotalDataset, range(train_len))
-        Valid_dataset = Subset(TotalDataset, range(train_len, total_len))
+        valid_len = int(len(dataset) - train_len)
+        Train_dataset = Subset(dataset, range(train_len))
+        Valid_dataset = Subset(dataset, range(train_len, len(dataset)))
         
         return Train_dataset, Valid_dataset
     
