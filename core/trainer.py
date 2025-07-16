@@ -4,12 +4,13 @@ from tqdm import tqdm
 from pathlib import Path
 from typing import Dict, Optional
 from datetime import datetime
+from utils.config_loader import RuntimeConfig
 
 class Trainer:
     def __init__(
         self,
         task,  # BaseTask实例
-        config: Dict,
+        config: RuntimeConfig,
         logger=None,
         callbacks: Optional[list] = None
     ):
