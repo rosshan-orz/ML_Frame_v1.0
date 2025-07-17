@@ -47,9 +47,7 @@ class Trainer:
         }
         return optim_map[self.config['training']['optimizer']](
             self.model.parameters(),
-            lr=self.config['training']['lr'],
-            # TODO
-            **self.config.get('optimizer_params', {})
+            **self.config['training']['optimizer_params']
         )
 
     def _create_scheduler(self):
@@ -61,10 +59,9 @@ class Trainer:
             'step': torch.optim.lr_scheduler.StepLR,
             'plateau': torch.optim.lr_scheduler.ReduceLROnPlateau
         }
-        # TODO
-        return schedulers[self.config['scheduler']](
+        return schedulers[self.config['training']['scheduler']](
             self.optimizer,
-            **self.config['scheduler_params']
+            **self.config['training']['scheduler_params']
         )
 
     def run(self):
@@ -74,6 +71,8 @@ class Trainer:
             self._run_epoch()
             
             # 验证阶段
+            self.epoch_logits.clear()
+            self.epoch_labels.clear()
             self.epoch_logits, self.epoch_labels, val_metrics = self._validate()
             self._checkpoint(val_metrics)
                 
