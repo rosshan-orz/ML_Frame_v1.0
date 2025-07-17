@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, Optional, List, Any, Tuple
 from datetime import datetime
 from utils.config_loader import RuntimeConfig
+from utils.callbacks import Callback
 
 class Trainer:
     def __init__(
@@ -12,7 +13,7 @@ class Trainer:
         task,  # BaseTask实例
         config: RuntimeConfig,
         logger=None,
-        callbacks: Optional[list] = None
+        callbacks: Optional[List[Callback]] = None
     ):
         """
         Args:
@@ -37,6 +38,11 @@ class Trainer:
         self.epoch_logits = []
         self.epoch_labels = []
         self.best_metric = -float('inf')
+        self.should_stop = False
+
+        # 初始化回调
+        for callback in self.callbacks:
+            callback.on_init_end(self)
 
     def _create_optimizer(self) -> torch.optim.Optimizer:
         """根据配置创建优化器"""
@@ -66,19 +72,31 @@ class Trainer:
 
     def run(self):
         """主训练循环"""
+        for callback in self.callbacks:
+            callback.on_train_start(self)
         for epoch in range(self.config['training']['epochs']):
+            if self.should_stop:
+                break
             self.epoch = epoch
+            for callback in self.callbacks:
+                callback.on_epoch_start(self)
             self._run_epoch()
             
             # 验证阶段
             self.epoch_logits.clear()
             self.epoch_labels.clear()
+            for callback in self.callbacks:
+                callback.on_validation_start(self)
             self.epoch_logits, self.epoch_labels, val_metrics = self._validate()
             self._checkpoint(val_metrics)
                 
             # 回调处理
             for callback in self.callbacks:
-                callback(self)
+                callback.on_validation_end(self)
+                callback.on_epoch_end(self)
+
+        for callback in self.callbacks:
+            callback.on_train_end(self)
 
     def _run_epoch(self):
         """执行单个epoch训练"""
@@ -86,6 +104,8 @@ class Trainer:
         pbar = tqdm(self.task.get_data_loaders()[0], desc=f"Epoch {self.epoch}")
         
         for batch in pbar:
+            for callback in self.callbacks:
+                callback.on_batch_start(self)
             # 训练步骤
             loss, metrics = self.task.train_step(batch, self.model, self.optimizer)
             
@@ -100,6 +120,8 @@ class Trainer:
             # 更新进度条
             pbar.set_postfix({'loss': loss, 'acc': metrics['accuracy']})
             self.global_step += 1
+            for callback in self.callbacks:
+                callback.on_batch_end(self)
 
         # 更新学习率
         if self.scheduler:
