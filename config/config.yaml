@@ -20,14 +20,16 @@ model:
 # Training config
 training:
   batch_size: 60
-  lr: 0.001
   epochs: 100
-  optimizer: "Adam"
+  optimizer: "adamw"
   optimizer_params:
+    lr: 0.001
     weight_decay: 0.001
-    patience: 1
+  scheduler: "plateau"
+  scheduler_params:
+    mode: "min"
     factor: 0.9
-    temperature: 0.1
+    patience: 1
   
 # Model env & save
 environment:
