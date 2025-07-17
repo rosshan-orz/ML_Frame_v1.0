@@ -82,7 +82,7 @@ class BaseTask(ABC):
         )
         return train_loader, val_loader
     
-    def compute_metrics(self, input_dict: Dict) -> Dict[str, float]:
+    def compute_metrics(self, input_dict: Dict) -> Dict[str, Any]:
         """
         计算任务相关Metrics
         默认使用全局注册的Metrics，子类可覆盖
